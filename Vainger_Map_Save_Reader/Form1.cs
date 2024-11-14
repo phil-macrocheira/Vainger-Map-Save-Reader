@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Diagnostics;
 using System.Xml.Linq;
 using System.Drawing;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Vainger_Map_Save_Reader
 {
@@ -124,7 +125,7 @@ namespace Vainger_Map_Save_Reader
             labelStabilizer.Text = "Stabilizers Found: " + stabilizerCount + " / 2";
             labelClone.Text = "Clones Found: " + cloneCount + " / 3";
 
-            CreateMap(ItemData);
+            CreateMap(ItemData,posX,posY,room);
         }
         private List<Item> GetItemData()
         {
@@ -135,22 +136,20 @@ namespace Vainger_Map_Save_Reader
             }
             else {
                 MessageBox.Show("VAINGER_ITEM_DATA.json not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Application.Exit();
+                System.Windows.Forms.Application.Exit();
                 return new List<Item>();
             }
         }
-        private void CreateMap(List<Item> ItemData)
+        private void CreateMap(List<Item> ItemData,int playerX,int playerY,int playerRoom)
         {
             byte circleRadius = 64;
             byte circleThickness = 16;
-            var circleColor = Color.Yellow;
-            int offsetX = 8;
-            int offsetY = 8;
+            var color = Color.Yellow;
             string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MISSING ITEMS MAP.png");
             string mapPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "MAP.png");
             if (!File.Exists(mapPath)) {
                 MessageBox.Show("MAP.png not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Application.Exit();
+                System.Windows.Forms.Application.Exit();
                 return;
             }
 
@@ -159,13 +158,44 @@ namespace Vainger_Map_Save_Reader
                     using (Graphics g = Graphics.FromImage(markedMap)) {
                         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
+                        // Mark player
+                        switch (playerRoom) {
+                            case 2:
+                                playerX += 3840;
+                                break;
+                            case 3:
+                                playerY += 2464;
+                                break;
+                            case 4:
+                                playerX += 4224;
+                                playerY += 2464;
+                                break;
+                            default:
+                                break;
+                        }
+                        using (Pen playerPen = new Pen(color, circleThickness))
+                        using (System.Drawing.Font playerFont = new System.Drawing.Font("Roboto", 30))
+                        using (Brush playerTextBrush = new SolidBrush(color)) {
+                            g.DrawEllipse(playerPen, playerX - circleRadius, playerY - circleRadius, circleRadius * 2, circleRadius * 2);
+
+                            string label = "PLAYER";
+                            SizeF textSize = g.MeasureString(label, playerFont);
+                            float textX = playerX - textSize.Width / 2;
+                            float textY = playerY - circleRadius - textSize.Height - 2;
+                            g.DrawString(label, playerFont, playerTextBrush, textX, textY);
+                        }
+
+                        // Mark each item
                         foreach (var item in ItemData) {
                             if (item.Collected == false) {
+                                int offsetX = 8;
+                                int offsetY = 8;
+
                                 switch (item.Room) {
                                     case "rm07_GravGuns2":
                                         offsetX += 3840;
                                         break;
-                                    case "rm07_GravGun3":
+                                    case "rm07_GravGuns3":
                                         offsetY += 2464;
                                         break;
                                     case "rm07_GravGuns4":
@@ -179,8 +209,17 @@ namespace Vainger_Map_Save_Reader
                                 int drawX = item.X + offsetX;
                                 int drawY = item.Y + offsetY;
 
-                                using (Pen pen = new Pen(circleColor, circleThickness)) {
+                                using (Pen pen = new Pen(color, circleThickness))
+                                using (System.Drawing.Font font = new System.Drawing.Font("Roboto", 30))
+                                using (Brush textBrush = new SolidBrush(color)) {
                                     g.DrawEllipse(pen, drawX - circleRadius, drawY - circleRadius, circleRadius * 2, circleRadius * 2);
+
+                                    //string label = item.Type + " (" + item.X + ", " + item.Y + ")";
+                                    string label = "";
+                                    SizeF textSize = g.MeasureString(label, font);
+                                    float textX = drawX - textSize.Width / 2;
+                                    float textY = drawY - circleRadius - textSize.Height - 2;
+                                    g.DrawString(label, font, textBrush, textX, textY);
                                 }
                             }
                         }
