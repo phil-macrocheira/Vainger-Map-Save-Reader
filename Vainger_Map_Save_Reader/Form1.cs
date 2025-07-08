@@ -68,55 +68,52 @@ namespace Vainger_Map_Save_Reader
                 string key = variable.Key;
                 double value = 0;
                 JsonElement element = variable.Value;
-                if (element.ValueKind == JsonValueKind.Number) {
+                if (element.ValueKind == JsonValueKind.String)
+                    double.TryParse(element.GetString(), out value);
+                else if (element.ValueKind == JsonValueKind.Number)
+                    element.TryGetDouble(out value);
                     
-                    if (element.TryGetDouble(out value)) {
-                        if (key.StartsWith("game7_collectListX")) {
-                            currentX = (int)value;
-                            //Debug.WriteLine(variable.ToString());
-                        }
-                        else if (key.StartsWith("game7_collectListY")) {
-                            foreach (var item in ItemData) {
-                                if (item.X == currentX && item.Y == (int)value) {
-                                    item.Collected = true;
-                                    switch (item.Type) {
-                                        case "Shield":
-                                            shieldCount++;
-                                            break;
-                                        case "Stabilizer":
-                                            stabilizerCount++;
-                                            break;
-                                        case "Clone":
-                                            cloneCount++;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                }
-
-                                //Debug.WriteLine(variable.ToString());
+                if (key.StartsWith("game7_collectListX")) {
+                    currentX = (int)value;
+                    //Debug.WriteLine(variable.ToString());
+                }
+                else if (key.StartsWith("game7_collectListY")) {
+                    foreach (var item in ItemData) {
+                        if (item.X == currentX && item.Y == (int)value) {
+                            item.Collected = true;
+                            switch (item.Type) {
+                                case "Shield":
+                                    shieldCount++;
+                                    break;
+                                case "Stabilizer":
+                                    stabilizerCount++;
+                                    break;
+                                case "Clone":
+                                    cloneCount++;
+                                    break;
+                                default:
+                                    break;
                             }
                         }
-                        else if (key == "game7_posX") {
-                            posX = (int)value;
-                            //Debug.WriteLine(variable.ToString());
-                        }
-                        else if (key == "game7_posY") {
-                            posY = (int)value;
-                            //Debug.WriteLine(variable.ToString());
-                        }
-                        else if (key == "game7_room") {
-                            room = (int)value;
-                            //Debug.WriteLine(variable.ToString());
-                        }
-                    }
-                }
-                else if (element.ValueKind == JsonValueKind.String) {
-                    string stringValue = element.GetString();
-                    if (key == "game0_detailValue17") {
-                        percent = stringValue;
+
                         //Debug.WriteLine(variable.ToString());
                     }
+                }
+                else if (key == "game7_posX") {
+                    posX = (int)value;
+                    //Debug.WriteLine(variable.ToString());
+                }
+                else if (key == "game7_posY") {
+                    posY = (int)value;
+                    //Debug.WriteLine(variable.ToString());
+                }
+                else if (key == "game7_room") {
+                    room = (int)value;
+                    //Debug.WriteLine(variable.ToString());
+                }
+                else if (element.ValueKind == JsonValueKind.String && key == "game0_detailValue17") {
+                    percent = element.GetString();
+                    //Debug.WriteLine(variable.ToString());
                 }
             }
 
@@ -142,8 +139,8 @@ namespace Vainger_Map_Save_Reader
         }
         private void CreateMap(List<Item> ItemData,int playerX,int playerY,int playerRoom)
         {
-            byte circleRadius = 64;
-            byte circleThickness = 16;
+            byte circleRadius = 40;
+            byte circleThickness = 10;
             var color = Color.Yellow;
             string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MISSING ITEMS MAP.png");
             string mapPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "MAP.png");
